@@ -4,7 +4,17 @@ from tqdm import tqdm
 from multiprocessing import Pool
 import pickle
 import os
+import numba as nb
 
+spec = [
+    ('S', nb.int32[:, :]),
+    ('L', nb.int32),
+    ('epsilon', nb.float32),
+    ('alpha', nb.float32),
+    ('Q', nb.float32[:, :, :, :]),
+]
+
+@nb.experimental.jitclass(spec)
 class Simulation():
     def __init__(self, L, S, epsilon, Q, alpha=0.05):
         self.L = L
@@ -14,7 +24,7 @@ class Simulation():
         self.Q = Q
 
     def update(self, time):
-        for _ in tqdm(range(time)):
+        for _ in range(time):
             for x in range(self.L):
                 for y in range(self.L):
                     # 判断属于大多数or少数
@@ -39,29 +49,33 @@ class Simulation():
                     self.Q[x, y, stat, action] = self.Q[x, y, stat, action] + self.alpha*(c-self.Q[x, y, stat, action])
 
 def run(L, alpha, n_epsilon, PATH, loop=200, realize=1000, warm=10000):
-    S = np.random.choice((-1, 1), (L, L))
+    S = np.ones((L, L), dtype=np.int32)
+    for i in range(L):
+        for j in range(L):
+            if np.random.choice((0, 1)):
+                S[i, j] *= -1
     Q = np.zeros((L, L, 2, 2), dtype=np.float32)
     PATH = PATH + "/L=%d/alpha=%.3f" %(L, alpha)
     os.makedirs(PATH, exist_ok=True)
-    epsilon_list = np.linspace(0.3, 0.1, n_epsilon)
     epsilon = 1.0
 
+    epsilon_list = np.linspace(0.20, 0.16, n_epsilon)
     M_list = np.zeros(n_epsilon)
-
-
 
     Ising = Simulation(L, S, epsilon, Q, alpha)
     for mark, epsilon in enumerate(epsilon_list):
         local_PATH = PATH + "/epsilon=%.4f" %(epsilon) 
         os.makedirs(local_PATH, exist_ok=True) 
         Ising.Q = np.zeros((L, L, 2, 2), dtype=np.float32)
+        Ising.epsilon = epsilon
         Ising.update(warm)
 
         for num in range(loop):
             with open(local_PATH+'/S_%d.pickle' %num, 'wb') as f:
                 pickle.dump(Ising.S, f)
             M_list[mark] += np.abs(np.sum(Ising.S)/L**2)
-        Ising.update(realize)
+            Ising.update(realize)
+
         M_list[mark] = M_list[mark]/loop
 
     plt.plot(epsilon_list, M_list)
@@ -72,13 +86,13 @@ def run(L, alpha, n_epsilon, PATH, loop=200, realize=1000, warm=10000):
 if __name__ == "__main__":
     pool = Pool(20)
 
-    L_list = [16, 32, 64]
+    L_list = [16, 32, 64, 96]
     alpha_list = [0.5, 0.1, 0.05, 0.01, 0.005, 0.001]
-    n_epsilon = 6
-    PATH = os.getcwd()+'/new_data'
-    loop = 10
-    realize = 10
-    warm = 10
+    n_epsilon = 50
+    PATH = os.getcwd()+'/data'
+    loop = 100000
+    realize = 200
+    warm = 10000
 
     for L in L_list:
         for alpha in alpha_list:
