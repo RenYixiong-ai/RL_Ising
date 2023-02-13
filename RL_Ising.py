@@ -64,10 +64,6 @@ def run(L, alpha, n_epsilon, PATH, loop=200, realize=1000, warm=10000):
 
     Ising = Simulation(L, S, epsilon, Q, alpha)
     for mark, epsilon in enumerate(epsilon_list):
-        '''
-        local_PATH = PATH + "/epsilon=%.4f" %(epsilon) 
-        os.makedirs(local_PATH, exist_ok=True) 
-        '''
         Ising.Q = np.zeros((L, L, 2, 2), dtype=np.float32)
         Ising.epsilon = epsilon
         Ising.update(warm)
@@ -82,8 +78,13 @@ def run(L, alpha, n_epsilon, PATH, loop=200, realize=1000, warm=10000):
 
         M_list[mark] = M_list[mark]/loop
 
+    with open(PATH+'/M.pickle', 'wb') as f:
+        pickle.dump(M_list, f)
+    with open(PATH+'/epsilon.pickle', 'wb') as f:
+        pickle.dump(epsilon_list, f)
+
     plt.plot(epsilon_list, M_list)
-    plt.savefig(PATH+'M_epsilon.png')
+    plt.savefig(PATH+'/M_epsilon.png')
     plt.close()
 
 
