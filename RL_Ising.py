@@ -64,15 +64,19 @@ def run(L, alpha, n_epsilon, PATH, loop=200, realize=1000, warm=10000):
 
     Ising = Simulation(L, S, epsilon, Q, alpha)
     for mark, epsilon in enumerate(epsilon_list):
+        '''
         local_PATH = PATH + "/epsilon=%.4f" %(epsilon) 
         os.makedirs(local_PATH, exist_ok=True) 
+        '''
         Ising.Q = np.zeros((L, L, 2, 2), dtype=np.float32)
         Ising.epsilon = epsilon
         Ising.update(warm)
 
         for num in range(loop):
+            '''
             with open(local_PATH+'/S_%d.pickle' %num, 'wb') as f:
                 pickle.dump(Ising.S, f)
+            '''
             M_list[mark] += np.abs(np.sum(Ising.S)/L**2)
             Ising.update(realize)
 
