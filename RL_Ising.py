@@ -89,9 +89,9 @@ def run(L, alpha, n_epsilon, PATH, loop=200, realize=1000, warm=10000):
 
 
 if __name__ == "__main__":
-    pool = Pool(10)
+    pool = Pool(20)
 
-    L_list = [16, 32, 64, 96]
+    L_list = [128, 96, 64, 32, 16]
     alpha_list = [0.5, 0.1, 0.05, 0.01, 0.005, 0.001]
     n_epsilon = 50
     PATH = os.getcwd()+'/data'
